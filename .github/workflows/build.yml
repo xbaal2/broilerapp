@@ -29,25 +29,23 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # ✅ Install Android SDK + Build Tools (path fix verified)
+      # ✅ Install Android SDK + Build Tools (fixed layout)
       - name: Install Android SDK + Build Tools
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip
-          
-          # Pindah ke folder yang benar
-          cd cmdline-tools/bin
-          chmod +x sdkmanager
-          
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          echo "Verifying sdkmanager path:"
-          pwd
-          ./sdkmanager --version
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          cd $ANDROID_SDK_ROOT/cmdline-tools
           
-          yes | ./sdkmanager --licenses || true
-          yes | ./sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip -d latest
+          
+          chmod +x latest/bin/sdkmanager
+          echo "✅ sdkmanager found at:"
+          ls -la latest/bin/
+          
+          yes | latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          yes | latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
       # Pindah ke folder proyek
       - name: Change working directory
@@ -60,9 +58,8 @@ jobs:
       - name: Build Kivy APK (Debug)
         working-directory: broiler
         run: |
-          export PATH=$PATH:$HOME/.buildozer/android/platform/android-sdk/platform-tools
           export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk-r25b
+          export PATH=$PATH:$ANDROIDSDK/platform-tools
           buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
 
       # Upload hasil build (APK)
