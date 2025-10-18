@@ -16,29 +16,28 @@ jobs:
       - name: Setup Python & dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip zip unzip openjdk-17-jdk curl
+          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
           pip install --upgrade pip Cython buildozer
 
       - name: Set environment variables
         run: |
-          echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
-          echo "PATH=$JAVA_HOME/bin:$PATH" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
-      - name: Install Android SDK Command Line Tools
+      - name: Install Android SDK Command Line Tools (FIXED)
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
           cd $ANDROID_HOME/cmdline-tools
-          curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q cmdline-tools.zip
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip sdk-tools.zip
           mv cmdline-tools latest
-          rm cmdline-tools.zip
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Fix sdkmanager path for Buildozer
+      - name: Fix sdkmanager path for Buildozer compatibility
         run: |
           mkdir -p $ANDROID_HOME/tools/bin
           ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
@@ -46,6 +45,13 @@ jobs:
       - name: Build APK with Buildozer
         run: |
           cd broiler
+          # Fix environment variables supaya Buildozer nggak error
+          export ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk-r25b
+          export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_HOME=$ANDROIDSDK
+          export ANDROID_SDK_ROOT=$ANDROIDSDK
+          export PATH=$ANDROIDSDK/cmdline-tools/latest/bin:$ANDROIDSDK/platform-tools:$PATH
+          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
           buildozer android debug --verbose
 
       - name: Upload APK artifact
