@@ -1,4 +1,4 @@
-name: Build Kivy APK
+name: Build BroilerApp (Kivy → APK)
 
 on:
   push:
@@ -9,42 +9,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      # Setup Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
+      # Install dependencies
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip openjdk-17-jdk python3-pip python3-setuptools python3-wheel python3-venv wget unzip
-
-      - name: Install Android SDK & Build Tools
-        run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip
-          mv cmdline-tools latest
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=~/.buildozer/android/platform/android-sdk "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Install Buildozer & Cython
-        run: |
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
           pip install --upgrade pip
-          pip install buildozer==1.5.0 Cython==0.29.36
+          pip install buildozer cython==0.29.36
 
-      - name: Build APK
+      # Set working directory ke folder broiler
+      - name: Change working directory
+        working-directory: broiler
         run: |
-          cd broiler
+          echo "Now inside $(pwd)"
+          ls -la
+
+      # Build APK
+      - name: Build Kivy APK (Debug)
+        working-directory: broiler
+        run: |
           buildozer android debug
 
-      - name: Upload APK
+      # Upload hasil build
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: broilerapp-apk
-          path: bin/*.apk
-
+          name: BroilerApp-debug-apk
+          path: broiler/bin/*.apk
