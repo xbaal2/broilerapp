@@ -1,4 +1,4 @@
-name: Build BroilerApp (Kivy → APK)
+name: Build Kivy APK
 
 on:
   push:
@@ -11,64 +11,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository
+      # 1️⃣ Checkout repo kamu
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Python
-      - name: Setup Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      # Install dependencies
-      - name: Install dependencies
+      # 2️⃣ Install dependencies untuk buildozer dan Android SDK
+      - name: Setup Python & dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev wget
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
+          pip install --upgrade pip Cython buildozer
 
-      # ✅ Install Android SDK + Build Tools (fix structure)
-      - name: Install Android SDK + Build Tools
+      # 3️⃣ Setup environment path SDK dan NDK
+      - name: Set environment variables
         run: |
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-          cd $ANDROID_SDK_ROOT/cmdline-tools
-          
-          # Download CLI tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip
-          
-          # Move isi folder biar path-nya benar (flatten)
-          mv cmdline-tools/* latest/
-          
-          chmod +x latest/bin/sdkmanager
-          echo "✅ sdkmanager found at:"
-          ls -la latest/bin/
-          
-          yes | latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          yes | latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-            "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
-      # Pindah ke folder proyek
-      - name: Change working directory
-        working-directory: broiler
+      # 4️⃣ Install Android SDK Command line tools
+      - name: Install Android SDK Command Line Tools
         run: |
-          echo "Now inside $(pwd)"
-          ls -la
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip sdk-tools.zip -d latest
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      # Build APK (Debug)
-      - name: Build Kivy APK (Debug)
-        working-directory: broiler
+      # 5️⃣ Build APK
+      - name: Build APK with Buildozer
         run: |
-          export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$PATH:$ANDROIDSDK/platform-tools
-          buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
+          cd broiler
+          buildozer android debug
 
-      # Upload hasil build (APK)
+      # 6️⃣ Upload hasil APK (kalau build sukses)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: BroilerApp-debug-apk
           path: broiler/bin/*.apk
+          if-no-files-found: warn
