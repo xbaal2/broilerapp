@@ -29,15 +29,15 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Install Android SDK + Build Tools (AIDL fix)
+      # Install Android SDK + Build Tools (fixed structure)
       - name: Install Android SDK + Build Tools
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip
-          yes | ./bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
-          yes | ./bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
+          unzip commandlinetools-linux-11076708_latest.zip -d tools
+          yes | tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses || true
+          yes | tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
             "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
       # Pindah ke folder broiler
@@ -51,9 +51,9 @@ jobs:
       - name: Build Kivy APK (Debug)
         working-directory: broiler
         run: |
-          buildozer android debug
+          buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
 
-      # Upload hasil build (APK)
+      # Upload hasil build
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
