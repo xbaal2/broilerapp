@@ -1,50 +1,47 @@
-name: Build Kivy APK
+name: Build APK
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Install tar
-        run: sudo apt-get update && sudo apt-get install -y tar unzip openjdk-17-jdk
+      - uses: actions/checkout@v3
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
-          sudo apt-get install -y git zip
-          pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          sudo apt update
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk tar wget
 
-      - name: Install Android SDK and NDK
+      - name: Install Buildozer
+        run: pip install --upgrade buildozer cython
+
+      - name: Install Android SDK & NDK
         run: |
-          mkdir -p ~/.buildozer/android/platform
-          cd ~/.buildozer/android/platform
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip cmdtools.zip -d cmdline-tools
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/
-          rm -rf cmdline-tools/cmdline-tools
-          yes | cmdline-tools/latest/bin/sdkmanager --licenses
-          yes | cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip
+          rm cmdline-tools.zip
+          mv cmdline-tools latest
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "ndk;25.2.9519653"
 
       - name: Build APK
-        run: |
-          buildozer android debug
+        run: buildozer android debug
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-APK
+          name: broilerapp-apk
           path: bin/*.apk
