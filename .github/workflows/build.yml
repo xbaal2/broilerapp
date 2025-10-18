@@ -22,44 +22,37 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
+          sudo apt install -y zip unzip openjdk-8-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
           pip install --upgrade pip
           pip install buildozer Cython==0.29.36
 
-      - name: Install Android SDK Command-line Tools
+      - name: Install prebuilt Android SDK & NDK
         run: |
           mkdir -p $HOME/android-sdk
           cd $HOME/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
-          unzip tools.zip -d cmdline-tools
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/
+          
+          # SDK tools lama kompatibel p4a
+          wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip -O sdk-tools.zip
+          unzip sdk-tools.zip -d tools
+          
+          # NDK r25b
+          mkdir -p ndk/25b
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
+          unzip ndk.zip -d ndk/25b
+          
           export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+          export PATH=$ANDROID_HOME/tools/bin:$PATH
+          
+          # Accept license dan install platform/build-tools
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
+          sdkmanager "platform-tools" "platforms;android-29" "build-tools;29.0.2" "ndk;25b"
 
-      - name: Fix SDK Tools path for Buildozer
-        run: |
-          # Buat folder tools/bin yang diharapkan Buildozer
-          mkdir -p $HOME/android-sdk/tools/bin
-          
-          # Salin sdkmanager dan avdmanager ke tools/bin
-          cp $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager $HOME/android-sdk/tools/bin/
-          cp $HOME/android-sdk/cmdline-tools/latest/bin/avdmanager $HOME/android-sdk/tools/bin/ || true
-          
-          # Beri permission executable
-          chmod +x $HOME/android-sdk/tools/bin/*
-          
-          # Cek hasil
-          ls -l $HOME/android-sdk/tools/bin
-
-      - name: Verify SDK and NDK installation
+      - name: Verify SDK and NDK
         run: |
           echo "SDK PATH: $HOME/android-sdk"
-          echo "NDK PATH: $HOME/android-sdk/ndk/25.2.9519653"
-          ls $HOME/android-sdk
-          ls $HOME/android-sdk/ndk/25.2.9519653
+          echo "NDK PATH: $HOME/android-sdk/ndk/25b"
+          ls -l $HOME/android-sdk/tools/bin
+          ls -l $HOME/android-sdk/ndk/25b
 
       - name: Build APK (Debug)
         working-directory: broiler
