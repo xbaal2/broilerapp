@@ -25,7 +25,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip tar wget openjdk-11-jdk build-essential libncurses5 libstdc++6 libffi-dev
 
       - name: Install Buildozer
         run: pip install --upgrade buildozer cython
@@ -49,5 +49,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: broilerapp
+          name: broilerapp-apk
           path: broiler/bin/*.apk
