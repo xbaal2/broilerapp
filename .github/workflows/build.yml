@@ -50,7 +50,7 @@ jobs:
       - name: Build APK
         run: |
           cd broiler
-          buildozer android debug
+          buildozer android debug deploy run
 
       # Upload APK
       - name: Upload APK
