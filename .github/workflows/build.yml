@@ -1,4 +1,4 @@
-name: Build Kivy APK
+name: Build Kivy APK Release
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Python & dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
+          sudo apt install -y python3-pip zip unzip openjdk-11-jdk git wget curl
           pip install --upgrade pip Cython buildozer
 
       - name: Set environment variables
@@ -25,38 +25,37 @@ jobs:
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "PATH=$PATH" >> $GITHUB_ENV
 
-      - name: Install Android SDK Command Line Tools (FIXED)
+      - name: Install Android SDK Command Line Tools
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
           cd $ANDROID_HOME/cmdline-tools
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip sdk-tools.zip
+          rm sdk-tools.zip
           mv cmdline-tools latest
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Fix sdkmanager path for Buildozer compatibility
+      - name: Fix sdkmanager path for Buildozer
         run: |
           mkdir -p $ANDROID_HOME/tools/bin
           ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
 
-      - name: Build APK with Buildozer
+      - name: Clean previous Buildozer cache
+        run: buildozer android clean || true
+
+      - name: Build Release APK with Buildozer
         run: |
           cd broiler
-          # Fix environment variables supaya Buildozer nggak error
-          export ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk-r25b
-          export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROID_HOME=$ANDROIDSDK
-          export ANDROID_SDK_ROOT=$ANDROIDSDK
-          export PATH=$ANDROIDSDK/cmdline-tools/latest/bin:$ANDROIDSDK/platform-tools:$PATH
-          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
-          buildozer android debug --verbose
+          # Buat release signed APK
+          buildozer android release --verbose
 
-      - name: Upload APK artifact
+      - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-debug-apk
+          name: BroilerApp-release-apk
           path: broiler/bin/*.apk
           if-no-files-found: warn
