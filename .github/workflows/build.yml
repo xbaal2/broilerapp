@@ -41,8 +41,17 @@ jobs:
 
       - name: Fix SDK Tools path for Buildozer
         run: |
-          mkdir -p $HOME/android-sdk/tools
-          ln -s $HOME/android-sdk/cmdline-tools/latest $HOME/android-sdk/tools/bin
+          # Buat folder tools/bin yang diharapkan Buildozer
+          mkdir -p $HOME/android-sdk/tools/bin
+          
+          # Salin sdkmanager dan avdmanager ke tools/bin
+          cp $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager $HOME/android-sdk/tools/bin/
+          cp $HOME/android-sdk/cmdline-tools/latest/bin/avdmanager $HOME/android-sdk/tools/bin/ || true
+          
+          # Beri permission executable
+          chmod +x $HOME/android-sdk/tools/bin/*
+          
+          # Cek hasil
           ls -l $HOME/android-sdk/tools/bin
 
       - name: Verify SDK and NDK installation
