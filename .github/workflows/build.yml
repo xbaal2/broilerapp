@@ -8,8 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -19,10 +21,11 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget curl
 
-      - name: Install Buildozer
-        run: pip install --upgrade buildozer cython
+      - name: Install Buildozer & Cython
+        run: |
+          pip install --upgrade buildozer cython
 
       - name: Install Android SDK & NDK
         run: |
@@ -42,6 +45,9 @@ jobs:
 
       - name: Build APK
         run: |
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
           cd broiler
           buildozer android debug
 
