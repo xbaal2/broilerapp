@@ -49,5 +49,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: broilerapp-apk
+          name: broilerapp
           path: broiler/bin/*.apk
