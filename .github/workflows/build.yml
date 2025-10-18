@@ -29,18 +29,18 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Install Android SDK & Build Tools (AIDL fix)
+      # Install Android SDK + Build Tools (AIDL fix)
       - name: Install Android SDK + Build Tools
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk
-          cd ~/.buildozer/android/platform/android-sdk
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d cmdline-tools
-          yes | cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
-          yes | cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
+          unzip commandlinetools-linux-11076708_latest.zip
+          yes | ./bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
+          yes | ./bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
             "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
-      # Move into broiler folder
+      # Pindah ke folder broiler
       - name: Change working directory
         working-directory: broiler
         run: |
