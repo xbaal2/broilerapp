@@ -1,67 +1,55 @@
-# Nama workflow yang akan muncul di tab "Actions" GitHub
-name: Build Android APK for BroilerApp
+name: Build Kivy APK
 
-# Kapan workflow ini dijalankan
 on:
   push:
-    branches:
-      - main  # Ganti 'main' jika branch utama kamu adalah 'master'
-  # Memungkinkan workflow dijalankan secara manual dari tab Actions
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-android:
-    # Build akan berjalan di runner Ubuntu
+  build:
     runs-on: ubuntu-latest
 
-    # Menggunakan container Docker resmi dari Kivy yang sudah punya semua alat (Android SDK/NDK)
-    container:
-      image: kivy/buildozer:stable # Diubah dari :python3.10 ke :stable untuk mengatasi error 'manifest not found'
-
-    # Menetapkan direktori kerja default untuk semua perintah 'run'
-    defaults:
-      run:
-        working-directory: ./broiler # Menggunakan folder proyek Kivy kamu (sesuai buildozer.spec)
-
     steps:
-      # Langkah 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Mengatasi masalah izin (permission)
-      # Ini adalah langkah KRUSIAL agar user 'buildozer' di dalam container bisa menulis/mengubah file
-      - name: Change ownership of the checkout directory
+      - name: Setup Python & dependencies
         run: |
-          # Memberikan izin ke user 'buildozer' di dalam container untuk mengakses folder kerja
-          sudo chown -R buildozer:buildozer /__w
+          sudo apt update
+          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
+          pip install --upgrade pip Cython buildozer
 
-      # Langkah 3: Mengatur cache untuk Buildozer
-      # Ini akan mempercepat build signifikan setelah yang pertama (karena tidak perlu download SDK/NDK lagi)
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v4
-        with:
-          path: /home/buildozer/.buildozer
-          # Kunci cache dibuat berdasarkan OS dan hash dari file buildozer.spec
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
-
-      # Langkah 4: Install dependensi build (misalnya cython terbaru)
-      # Cython dibutuhkan oleh Kivy
-      - name: Install build dependencies
+      - name: Set environment variables
         run: |
-          pip install --upgrade cython
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
-      # Langkah 5: Menjalankan proses build APK
-      # Karena kita sudah mengatur 'working-directory' di atas, perintah ini berjalan di dalam folder 'broiler'
+      - name: Install Android SDK Command Line Tools (FIXED)
+        run: |
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip sdk-tools.zip
+          mv cmdline-tools latest
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Fix sdkmanager path for Buildozer compatibility
+        run: |
+          mkdir -p $ANDROID_HOME/tools/bin
+          ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
+
       - name: Build APK with Buildozer
-        run: buildozer android debug
+        run: |
+          cd broiler
+          buildozer android debug
 
-      # Langkah 6: Mengunggah file APK yang sudah jadi sebagai "Artifact"
-      # File APK akan muncul di tab Actions setelah build selesai
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: broilerapp-apk
-          # Path bin/*.apk relatif terhadap working-directory (./broiler)
-          path: bin/*.apk
+          name: BroilerApp-debug-apk
+          path: broiler/bin/*.apk
+          if-no-files-found: warn
