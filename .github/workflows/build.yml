@@ -29,25 +29,34 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # ✅ Install Android SDK (dengan path benar)
+      # ✅ Install Android SDK + Build Tools (path fix verified)
       - name: Install Android SDK + Build Tools
         run: |
           mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
           cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q commandlinetools-linux-11076708_latest.zip
+          
+          # Pindah ke folder yang benar
+          cd cmdline-tools/bin
+          chmod +x sdkmanager
+          
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          yes | ./bin/sdkmanager --licenses || true
-          yes | ./bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+          echo "Verifying sdkmanager path:"
+          pwd
+          ./sdkmanager --version
+          
+          yes | ./sdkmanager --licenses || true
+          yes | ./sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
-      # Pastikan direktori kerja ke dalam folder proyek
+      # Pindah ke folder proyek
       - name: Change working directory
         working-directory: broiler
         run: |
           echo "Now inside $(pwd)"
           ls -la
 
-      # ✅ Build APK (Debug)
+      # Build APK (Debug)
       - name: Build Kivy APK (Debug)
         working-directory: broiler
         run: |
@@ -56,7 +65,7 @@ jobs:
           export ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk-r25b
           buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
 
-      # ✅ Upload hasil build (APK)
+      # Upload hasil build (APK)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
