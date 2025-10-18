@@ -1,3 +1,4 @@
+[app]
 # Nama aplikasi
 title = BroilerApp
 package.name = broilerapp
@@ -33,3 +34,8 @@ build_type = debug
 
 # Package Android
 android.arch = arm64-v8a
+
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
