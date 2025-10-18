@@ -1,9 +1,10 @@
 name: Build Kivy APK
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -13,43 +14,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python & dependencies
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
-          pip install --upgrade pip Cython buildozer
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
+          pip install --upgrade pip
+          pip install buildozer Cython==0.29.36
 
-      - name: Set environment variables
+      - name: Configure Android SDK/NDK for Buildozer
         run: |
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "Setting up environment variables..."
+          mkdir -p ~/.buildozer/android/platform
+          ln -s /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
+          ln -s /usr/local/lib/android/sdk/ndk/27.3.13750724 ~/.buildozer/android/platform/android-ndk-r25b
+          echo "ANDROID SDK PATH:"
+          ls ~/.buildozer/android/platform/android-sdk
 
-      - name: Install Android SDK Command Line Tools (FIXED)
+      - name: Verify SDK/NDK installation
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          cd $ANDROID_HOME/cmdline-tools
-          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip sdk-tools.zip
-          mv cmdline-tools latest
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          ~/.buildozer/android/platform/android-sdk/platform-tools/adb version || true
+          ~/.buildozer/android/platform/android-ndk-r25b/ndk-build --version || true
 
-      - name: Fix sdkmanager path for Buildozer compatibility
+      - name: Build APK (Debug)
+        working-directory: broiler
         run: |
-          mkdir -p $ANDROID_HOME/tools/bin
-          ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
-
-      - name: Build APK with Buildozer
-        run: |
-          cd broiler
-          buildozer android debug
+          echo "=== BUILD START ==="
+          buildozer -v android debug
+          echo "=== BUILD FINISHED ==="
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: BroilerApp-debug-apk
           path: broiler/bin/*.apk
-          if-no-files-found: warn
