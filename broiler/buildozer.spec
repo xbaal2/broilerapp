@@ -32,9 +32,6 @@ android.build_tools_version = 29.0.2
 # Arsitektur Android
 android.archs = arm64-v8a,armeabi-v7a
 
-# Nama package unik
-package.domain = org.iqbalyda
-
 # Aplikasi mode
 fullscreen = 0
 
