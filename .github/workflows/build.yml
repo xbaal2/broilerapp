@@ -29,31 +29,34 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Install Android SDK + Build Tools (fixed structure)
+      # ✅ Install Android SDK (dengan path benar)
       - name: Install Android SDK + Build Tools
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d tools
-          yes | tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses || true
-          yes | tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
-            "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          yes | ./bin/sdkmanager --licenses || true
+          yes | ./bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
-      # Pindah ke folder broiler
+      # Pastikan direktori kerja ke dalam folder proyek
       - name: Change working directory
         working-directory: broiler
         run: |
           echo "Now inside $(pwd)"
           ls -la
 
-      # Build APK
+      # ✅ Build APK (Debug)
       - name: Build Kivy APK (Debug)
         working-directory: broiler
         run: |
+          export PATH=$PATH:$HOME/.buildozer/android/platform/android-sdk/platform-tools
+          export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk-r25b
           buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
 
-      # Upload hasil build
+      # ✅ Upload hasil build (APK)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
