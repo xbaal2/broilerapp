@@ -44,8 +44,8 @@ android.entrypoint = main.py
 android.accept_sdk_license = True
 
 # Paths SDK/NDK lokal untuk GitHub Actions
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+android.sdk_path = /home/runner/android-sdk
+android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
 
 # Mode debug agar log build terlihat jelas
 log_level = 2
@@ -59,8 +59,8 @@ warn_on_root = 1
 build_dir = .buildozer
 
 # Gunakan NDK dan SDK path lokal
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+android.sdk_path = /home/runner/android-sdk
+android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
 
 # Log level
 log_level = 2
