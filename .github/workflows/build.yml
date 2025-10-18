@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
@@ -19,7 +20,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk tar wget
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-17-jdk wget curl
 
       - name: Install Buildozer
         run: pip install --upgrade buildozer cython
@@ -32,18 +33,20 @@ jobs:
           unzip cmdline-tools.zip
           rm cmdline-tools.zip
           mv cmdline-tools latest
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+      - name: Accept SDK Licenses & Install Packages
+        run: |
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "ndk;25.2.9519653"
 
       - name: Build APK
-  run: |
-    cd broiler
-    buildozer android debug
+        run: |
+          cd broiler
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: broilerapp-apk
-          path: bin/*.apk
+          path: broiler/bin/*.apk
