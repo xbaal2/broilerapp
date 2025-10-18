@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,28 +19,33 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y \
-            git zip unzip openjdk-17-jdk python3-pip python3-setuptools \
-            python3-wheel python3-venv libffi-dev libssl-dev \
-            autoconf automake build-essential libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev
+          sudo apt install -y git zip unzip wget openjdk-17-jdk python3-pip python3-setuptools python3-wheel python3-venv
 
       - name: Install Buildozer & Cython
         run: |
           pip install --upgrade pip
-          pip install buildozer==1.5.0 Cython==0.29.36 virtualenv
+          pip install buildozer==1.5.0 Cython==0.29.36
 
-      - name: Prepare Buildozer environment
+      - name: Prepare Android SDK Build Tools
         run: |
-          buildozer init || true
+          mkdir -p ~/.buildozer/android/platform/android-sdk
+          cd ~/.buildozer/android/platform/android-sdk
+          wget https://dl.google.com/android/repository/build-tools_r34.0.0-linux.zip
+          unzip build-tools_r34.0.0-linux.zip
+          mv android-14 build-tools || mv build-tools_r34.0.0 build-tools || true
+          rm build-tools_r34.0.0-linux.zip
+
+      - name: Build APK
+        run: |
           buildozer android debug
 
-      - name: Upload generated APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-APK
+          name: broilerapp-apk
           path: bin/*.apk
+
 
