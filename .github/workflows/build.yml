@@ -39,6 +39,7 @@ jobs:
 
       - name: Build APK
         run: |
+          cd broiler
           buildozer android debug
 
       - name: Upload APK
