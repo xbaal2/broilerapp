@@ -4,33 +4,40 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     env:
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH
+      ANDROID_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
+      PATH: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/platform-tools:$PATH
 
     steps:
+      # 1. Install basic tools (tar, unzip, wget, git, openjdk)
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget tar curl
+
+      # 2. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      # 3. Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip tar wget openjdk-11-jdk build-essential libncurses5 libstdc++6 libffi-dev
-
-      - name: Install Buildozer
+      # 4. Install Buildozer + Cython
+      - name: Install Buildozer and Cython
         run: pip install --upgrade buildozer cython
 
-      - name: Install Android SDK Command-line Tools
+      # 5. Install Android SDK cmdline-tools
+      - name: Install Android SDK Command Line Tools
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
           cd $ANDROID_HOME/cmdline-tools
@@ -41,12 +48,13 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
 
-      - name: Build APK with Buildozer
-        run: |
-          cd broiler
-          buildozer android debug
+      # 6. Build APK
+      - name: Build APK
+        working-directory: broiler
+        run: buildozer android debug
 
-      - name: Upload APK artifact
+      # 7. Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: broilerapp-apk
