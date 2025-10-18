@@ -28,11 +28,8 @@ android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.minapi = 26
 android.api = 31
 
-# Arsitektur Android (gunakan ini agar kompatibel)
+# Arsitektur Android
 android.archs = arm64-v8a,armeabi-v7a
-
-# Nama package unik
-package.domain = org.iqbalyda
 
 # Aplikasi mode
 fullscreen = 0
@@ -40,15 +37,15 @@ fullscreen = 0
 # Build type
 build_type = debug
 
-# Atur nama output APK
+# Entry point Python
 android.entrypoint = main.py
-android.requirements = kivy
-android.minapi = 26
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
 
 # Gunakan legacy SDK agar tidak error di runner
 android.accept_sdk_license = True
+
+# Paths SDK/NDK lokal untuk GitHub Actions
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
 
 # Mode debug agar log build terlihat jelas
 log_level = 2
@@ -61,9 +58,9 @@ warn_on_root = 1
 # Cache path buildozer
 build_dir = .buildozer
 
-# Gunakan NDK dan SDK path lokal (hindari download ulang)
+# Gunakan NDK dan SDK path lokal
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
 
-# Jangan ubah ini
+# Log level
 log_level = 2
