@@ -39,6 +39,12 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
 
+      - name: Fix SDK Tools path for Buildozer
+        run: |
+          mkdir -p $HOME/android-sdk/tools
+          ln -s $HOME/android-sdk/cmdline-tools/latest $HOME/android-sdk/tools/bin
+          ls -l $HOME/android-sdk/tools/bin
+
       - name: Verify SDK and NDK installation
         run: |
           echo "SDK PATH: $HOME/android-sdk"
