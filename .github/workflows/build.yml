@@ -38,7 +38,9 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-33" "ndk;25.2.9519653"
 
       - name: Build APK
-        run: buildozer android debug
+  run: |
+    cd broiler
+    buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
