@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,8 +16,15 @@ jobs:
       - name: Setup Python & dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip zip unzip openjdk-11-jdk git wget curl
+          sudo apt install -y python3-pip zip unzip openjdk-17-jdk curl
           pip install --upgrade pip Cython buildozer
+
+      - name: Set JAVA_HOME
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
+          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Set environment variables
         run: |
@@ -25,7 +32,6 @@ jobs:
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install Android SDK Command Line Tools
@@ -34,28 +40,30 @@ jobs:
           cd $ANDROID_HOME/cmdline-tools
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip sdk-tools.zip
-          rm sdk-tools.zip
           mv cmdline-tools latest
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Fix sdkmanager path for Buildozer
+      - name: Fix sdkmanager & Build-tools path
         run: |
           mkdir -p $ANDROID_HOME/tools/bin
           ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
+          mkdir -p $ANDROID_HOME/build-tools/33.0.2
+          ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/aidl $ANDROID_HOME/build-tools/33.0.2/aidl
+          ln -sf $ANDROID_HOME/platform-tools/adb $ANDROID_HOME/build-tools/33.0.2/adb
+          ln -sf $ANDROID_HOME/platform-tools/zipalign $ANDROID_HOME/build-tools/33.0.2/zipalign
 
       - name: Clean previous Buildozer cache
         run: buildozer android clean || true
 
-      - name: Build Release APK with Buildozer
+      - name: Build APK with Buildozer
         run: |
           cd broiler
-          # Buat release signed APK
-          buildozer android release --verbose
+          buildozer android debug
 
-      - name: Upload Release APK artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-release-apk
+          name: BroilerApp-debug-apk
           path: broiler/bin/*.apk
           if-no-files-found: warn
