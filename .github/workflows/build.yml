@@ -1,66 +1,60 @@
-[app]
-# Nama aplikasi
-title = BroilerApp
-package.name = broilerapp
-package.domain = org.iqbalyda
+name: Build Kivy APK
 
-# Versi aplikasi
-version = 0.1
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-# File utama dan resource
-source.dir = .
-source.include_exts = py,kv,png,jpg,jpeg,json
-source.include_patterns = icons/*
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# Requirements Python dan Kivy
-requirements = python3,kivy==2.3.1,openssl,requests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-# Orientasi layar
-orientation = portrait
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-# Ikon launcher
-icon.filename = icons/icon.png
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
+          pip install --upgrade pip
+          pip install buildozer Cython==0.29.36
 
-# Permissions Android
-android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+      - name: Install Android SDK Command-line Tools
+        run: |
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
+          unzip tools.zip -d cmdline-tools
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
 
-# Versi SDK Android
-android.minapi = 26
-android.api = 31
+      - name: Verify SDK and NDK installation
+        run: |
+          echo "SDK PATH: $HOME/android-sdk"
+          echo "NDK PATH: $HOME/android-sdk/ndk/25.2.9519653"
+          ls $HOME/android-sdk
+          ls $HOME/android-sdk/ndk/25.2.9519653
 
-# Arsitektur Android
-android.archs = arm64-v8a,armeabi-v7a
+      - name: Build APK (Debug)
+        working-directory: broiler
+        run: |
+          echo "=== BUILD START ==="
+          buildozer -v android debug
+          echo "=== BUILD FINISHED ==="
 
-# Aplikasi mode
-fullscreen = 0
-
-# Build type
-build_type = debug
-
-# Entry point Python
-android.entrypoint = main.py
-
-# Gunakan legacy SDK agar tidak error di runner
-android.accept_sdk_license = True
-
-# Paths SDK/NDK lokal untuk GitHub Actions
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
-
-# Mode debug agar log build terlihat jelas
-log_level = 2
-
-
-[buildozer]
-# Jangan root
-warn_on_root = 1
-
-# Cache path buildozer
-build_dir = .buildozer
-
-# Gunakan NDK dan SDK path lokal
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
-
-# Log level
-log_level = 2
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BroilerApp-debug-apk
+          path: broiler/bin/*.apk
