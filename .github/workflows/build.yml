@@ -29,15 +29,19 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # ✅ Install Android SDK + Build Tools (fixed layout)
+      # ✅ Install Android SDK + Build Tools (fix structure)
       - name: Install Android SDK + Build Tools
         run: |
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
           cd $ANDROID_SDK_ROOT/cmdline-tools
           
+          # Download CLI tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip -d latest
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          
+          # Move isi folder biar path-nya benar (flatten)
+          mv cmdline-tools/* latest/
           
           chmod +x latest/bin/sdkmanager
           echo "✅ sdkmanager found at:"
