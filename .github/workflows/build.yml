@@ -1,34 +1,67 @@
-name: Build APK
+# Nama workflow yang akan muncul di tab "Actions" GitHub
+name: Build Android APK for BroilerApp
 
+# Kapan workflow ini dijalankan
 on:
   push:
     branches:
-      - main
+      - main  # Ganti 'main' jika branch utama kamu adalah 'master'
+  # Memungkinkan workflow dijalankan secara manual dari tab Actions
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
+    # Build akan berjalan di runner Ubuntu
     runs-on: ubuntu-latest
+
+    # Menggunakan container Docker resmi dari Kivy yang sudah punya semua alat (Android SDK/NDK)
     container:
       image: kivy/buildozer:python3.10
+
+    # Menetapkan direktori kerja default untuk semua perintah 'run'
+    defaults:
+      run:
+        working-directory: ./broiler # Menggunakan folder proyek Kivy kamu (sesuai buildozer.spec)
+
     steps:
+      # Langkah 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set working directory
-        working-directory: ./broiler
-        run: echo "Working directory set"
+      # Langkah 2: Mengatasi masalah izin (permission)
+      # Ini adalah langkah KRUSIAL agar user 'buildozer' di dalam container bisa menulis/mengubah file
+      - name: Change ownership of the checkout directory
+        run: |
+          # Memberikan izin ke user 'buildozer' di dalam container untuk mengakses folder kerja
+          sudo chown -R buildozer:buildozer /__w
 
-      - name: Install dependencies
-        working-directory: ./broiler
+      # Langkah 3: Mengatur cache untuk Buildozer
+      # Ini akan mempercepat build signifikan setelah yang pertama (karena tidak perlu download SDK/NDK lagi)
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: /home/buildozer/.buildozer
+          # Kunci cache dibuat berdasarkan OS dan hash dari file buildozer.spec
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      # Langkah 4: Install dependensi build (misalnya cython terbaru)
+      # Cython dibutuhkan oleh Kivy
+      - name: Install build dependencies
         run: |
           pip install --upgrade cython
 
-      - name: Build APK
-        working-directory: ./broiler
+      # Langkah 5: Menjalankan proses build APK
+      # Karena kita sudah mengatur 'working-directory' di atas, perintah ini berjalan di dalam folder 'broiler'
+      - name: Build APK with Buildozer
         run: buildozer android debug
 
-      - name: Upload APK
+      # Langkah 6: Mengunggah file APK yang sudah jadi sebagai "Artifact"
+      # File APK akan muncul di tab Actions setelah build selesai
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: broilerapp-apk
-          path: ./broiler/bin/*.apk
+          # Path bin/*.apk relatif terhadap working-directory (./broiler)
+          path: bin/*.apk
