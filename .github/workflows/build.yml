@@ -16,7 +16,7 @@ jobs:
 
     # Menggunakan container Docker resmi dari Kivy yang sudah punya semua alat (Android SDK/NDK)
     container:
-      image: kivy/buildozer:python3.10
+      image: kivy/buildozer:stable # Diubah dari :python3.10 ke :stable untuk mengatasi error 'manifest not found'
 
     # Menetapkan direktori kerja default untuk semua perintah 'run'
     defaults:
