@@ -2,57 +2,49 @@ name: Build Kivy APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk-r25b
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:${{ github.workspace }}/.local/bin:$PATH
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Install tar
+        run: sudo apt-get update && sudo apt-get install -y tar unzip openjdk-17-jdk
 
-    - name: Setup dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y unzip wget python3-pip openjdk-17-jdk git
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Buildozer
-      run: |
-        pip3 install --upgrade pip
-        pip3 install buildozer cython==0.29.34
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
 
-    - name: Setup Android SDK & NDK
-      run: |
-        mkdir -p $ANDROID_HOME/cmdline-tools
-        cd $ANDROID_HOME/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip
-        rm cmdline-tools.zip
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y git zip
+          pip install --upgrade pip
+          pip install buildozer cython virtualenv
 
-        mkdir -p latest
-        # pindahkan semua kecuali folder latest
-        shopt -s extglob
-        mv !(latest) latest/
-        cd $GITHUB_WORKSPACE
+      - name: Install Android SDK and NDK
+        run: |
+          mkdir -p ~/.buildozer/android/platform
+          cd ~/.buildozer/android/platform
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d cmdline-tools
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/
+          rm -rf cmdline-tools/cmdline-tools
+          yes | cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
 
-        # Install platform-tools, build-tools, platform SDK
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+      - name: Build APK
+        run: |
+          buildozer android debug
 
-        # Download & unzip NDK r25b
-        wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-        unzip android-ndk-r25b-linux.zip
-        rm android-ndk-r25b-linux.zip
-        mv android-ndk-r25b $ANDROID_NDK_HOME
-
-    - name: Build APK
-      run: |
-        buildozer android debug deploy run
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: BroilerApp-APK
+          path: bin/*.apk
