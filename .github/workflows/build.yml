@@ -4,56 +4,49 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH
 
     steps:
-      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget curl
+          sudo apt install -y python3-pip python3-setuptools python3-dev git zip unzip openjdk-11-jdk wget
 
-      # Install Buildozer & Cython
       - name: Install Buildozer
         run: pip install --upgrade buildozer cython
 
-      # Install Android SDK cmdline-tools & NDK
-      - name: Install Android SDK & NDK
+      - name: Install Android SDK Command-line Tools
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           rm cmdline-tools.zip
           mv cmdline-tools latest
-
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
 
-      # Build APK
-      - name: Build APK
+      - name: Build APK with Buildozer
         run: |
           cd broiler
-          buildozer android debug deploy run
+          buildozer android debug
 
-      # Upload APK
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: broilerapp-apk
