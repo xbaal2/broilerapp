@@ -1,8 +1,9 @@
-name: Build BroilerApp APK
+name: Build BroilerApp (Kivy → APK)
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,38 +11,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Checkout Repository
+      # 🧩 1. Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v4
+      # 🐍 2. Setup Python
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: 📦 Install Dependencies
+      # 📦 3. Install dependencies (Buildozer + SDK requirements)
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip zip openjdk-17-jdk
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev libsqlite3-dev zlib1g-dev wget
           pip install --upgrade pip
-          pip install buildozer==1.5.0 Cython==0.29.36
+          pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: 🧰 Prepare Android SDK/NDK
+      # 🧰 4. Prepare Android SDK & NDK manually (Fix sdkmanager issue)
+      - name: Prepare Android SDK/NDK
         run: |
           mkdir -p ~/.buildozer/android/platform
           cd ~/.buildozer/android/platform
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          mkdir -p android-sdk/cmdline-tools/latest
-          mv cmdline-tools/* android-sdk/cmdline-tools/latest/
-          yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+          echo "📦 Downloading Android Command Line Tools..."
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d android-sdk/cmdline-tools
+          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
+
+          echo "📂 Setting PATH for sdkmanager..."
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+
+          echo "🧩 Installing Android SDK packages..."
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+          echo "🧱 Installing Android NDK r25b..."
           wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
+          mv android-ndk-r25b android-ndk-r25b
 
-      - name: 🏗️ Build APK
+      # 📂 5. Move to project directory (where buildozer.spec is)
+      - name: Change working directory
         working-directory: broiler
-        run: buildozer android debug
+        run: |
+          echo "Now inside $(pwd)"
+          ls -la
 
-      - name: 📤 Upload APK Artifact
+      # 🏗️ 6. Build Kivy APK (Debug)
+      - name: Build Kivy APK
+        working-directory: broiler
+        run: |
+          echo "=== BUILD START ==="
+          buildozer android debug || (cat .buildozer/android/platform/build*/dists/*/buildozer.log || true)
+
+      # 📤 7. Upload hasil build (.apk)
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: BroilerApp-debug-apk
