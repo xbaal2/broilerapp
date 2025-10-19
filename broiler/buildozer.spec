@@ -3,28 +3,67 @@
 title = BroilerApp
 package.name = broilerapp
 package.domain = org.iqbalyda
+
+# Versi aplikasi
 version = 0.1
 
-# File Python utama
-source.include_exts = py,png,jpg,kv,json
+# File utama dan resource
 source.dir = .
+source.include_exts = py,kv,png,jpg,jpeg,json
 source.include_patterns = icons/*
 
-# Requirements
-requirements = python3,kivy==2.3.1
+# Requirements Python dan Kivy
+requirements = python3,kivy==2.3.1,openssl,requests
 
 # Orientasi layar
 orientation = portrait
 
-# Ikon aplikasi
-icon.filename = icons/app_icon.png
+# Ikon launcher
+icon.filename = icons/icon.png
 
-# Permissions Android (contoh)
-android.permissions = INTERNET,ACCESS_NETWORK_STATE
+# Permissions Android
+android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
-# Target Android API
-android.api = 33
+# Versi SDK Android
 android.minapi = 26
-android.sdk = 33
-android.ndk = 25b
-android.gradle_dependencies = 'com.android.tools.build:gradle:7.4.0'
+android.api = 31
+
+# Arsitektur Android (gunakan ini agar kompatibel)
+android.archs = arm64-v8a,armeabi-v7a
+
+# Nama package unik
+package.domain = org.iqbalyda
+
+# Aplikasi mode
+fullscreen = 0
+
+# Build type
+build_type = debug
+
+# Atur nama output APK
+android.entrypoint = main.py
+android.requirements = kivy
+android.minapi = 26
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+
+# Gunakan legacy SDK agar tidak error di runner
+android.accept_sdk_license = True
+
+# Mode debug agar log build terlihat jelas
+log_level = 2
+
+
+[buildozer]
+# Jangan root
+warn_on_root = 1
+
+# Cache path buildozer
+build_dir = .buildozer
+
+# Gunakan NDK dan SDK path lokal (hindari download ulang)
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+
+# Jangan ubah ini
+log_level = 2
