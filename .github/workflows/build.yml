@@ -30,19 +30,11 @@ jobs:
         unzip -q cmdtools.zip -d android-sdk/
         rm cmdtools.zip
 
-        # 🩵 Fix struktur folder agar sdkmanager valid
-        if [ -d "android-sdk/cmdline-tools/bin" ]; then
-          mkdir -p android-sdk/cmdline-tools/latest
-          mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
-        elif [ -d "android-sdk/cmdline-tools/cmdline-tools/bin" ]; then
-          mkdir -p android-sdk/cmdline-tools/latest
-          mv android-sdk/cmdline-tools/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
-        fi
-
-        echo "✅ SDK tools unpacked successfully."
+        # ✅ Fix folder struktur agar sesuai Buildozer
+        mkdir -p android-sdk/cmdline-tools/latest
+        mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
 
         export PATH=$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$PATH
-
         yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
         yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
           "platform-tools" "platforms;android-31" "build-tools;31.0.0"
@@ -56,8 +48,9 @@ jobs:
       env:
         ANDROIDSDK: $HOME/.buildozer/android/platform/android-sdk
         ANDROIDNDK: $HOME/.buildozer/android/platform/android-ndk-r25b
+        ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
+        PATH: $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$PATH
       run: |
-        export PATH=$ANDROIDSDK/cmdline-tools/latest/bin:$PATH
         cd broiler
         echo "=== BUILD START ==="
         buildozer android debug
