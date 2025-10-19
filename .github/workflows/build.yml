@@ -30,7 +30,7 @@ jobs:
         unzip -q cmdtools.zip -d android-sdk/
         rm cmdtools.zip
 
-        # 🩵 Pastikan struktur folder benar
+        # 🩵 Fix struktur folder agar sdkmanager valid
         if [ -d "android-sdk/cmdline-tools/bin" ]; then
           mkdir -p android-sdk/cmdline-tools/latest
           mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
@@ -41,11 +41,11 @@ jobs:
 
         echo "✅ SDK tools unpacked successfully."
 
-        # 🧩 Install required packages
         export PATH=$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$PATH
+
         yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
         yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
-            "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+          "platform-tools" "platforms;android-31" "build-tools;31.0.0"
 
         echo "🧱 Installing Android NDK r25b..."
         wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
