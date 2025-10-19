@@ -49,6 +49,7 @@ jobs:
       - name: 🚀 Build Kivy APK (Debug)
         run: |
           echo "=== BUILD START ==="
+          cd broiler
           buildozer android debug
 
       # 5️⃣ Upload hasil build
