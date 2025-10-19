@@ -23,10 +23,9 @@ build_type = debug
 android.entrypoint = main.py
 android.accept_sdk_license = True
 
-# ✅ Tambahan penting untuk path SDK baru
+# ✅ Pastikan SDK & NDK path sinkron dengan runner
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
-android.sdkmanager = /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager
 android.cmdline_tools = latest
 
 log_level = 2
