@@ -38,12 +38,12 @@ jobs:
           unzip -q android-ndk-r25b-linux.zip
 
       - name: 🏗️ Build APK
-        run: |
-          buildozer android debug
+        working-directory: broiler
+        run: buildozer android debug
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BroilerApp-debug-apk
-          path: bin/*.apk
+          path: broiler/bin/*.apk
           if-no-files-found: warn
