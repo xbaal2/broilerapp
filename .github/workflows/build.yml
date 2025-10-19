@@ -1,9 +1,8 @@
-name: Build Kivy APK
+name: Build Kivy Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,28 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
-      - name: 🧩 Checkout repository
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout repo
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v3
 
       # 2️⃣ Install dependencies
-      - name: ⚙️ Install dependencies
+      - name: ⚙️ Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip zip unzip wget openjdk-17-jdk
-          pip install buildozer cython
+          sudo apt install -y python3 python3-pip openjdk-17-jdk zip unzip wget
+          pip install --upgrade pip
+          pip install buildozer Cython
 
       # 3️⃣ Setup Android SDK & NDK
       - name: 🧱 Setup Android SDK & NDK
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+
+          echo "📦 Downloading Android Command Line Tools..."
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline.zip
           unzip -q cmdline.zip
           rm cmdline.zip
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-          cd ~
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+          echo "🧩 Installing SDK packages..."
+          yes | sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+          echo "📦 Downloading Android NDK r25b..."
+          cd ~/.buildozer/android/platform
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
           unzip -q ndk.zip
           mv android-ndk-r25b ~/.buildozer/android/platform/android-ndk-r25b
@@ -42,17 +50,12 @@ jobs:
       - name: 🚀 Build Kivy APK (Debug)
         run: |
           echo "=== BUILD START ==="
-          cd broiler
-          if [ ! -f "buildozer.spec" ]; then
-            echo "❌ buildozer.spec tidak ditemukan!"
-            exit 1
-          fi
           buildozer android debug
 
       # 5️⃣ Upload hasil build
-      - name: 🍰 Upload APK artifact
+      - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: BroilerApp-debug-apk
-          path: broiler/bin/*.apk
+          path: bin/*.apk
           if-no-files-found: error
