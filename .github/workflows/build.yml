@@ -17,9 +17,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y python3 python3-pip openjdk-17-jdk unzip wget git
-
-    - name: Install Buildozer
-      run: |
         pip install --upgrade pip
         pip install buildozer cython virtualenv
 
@@ -27,17 +24,33 @@ jobs:
       run: |
         mkdir -p $HOME/.buildozer/android/platform
         cd $HOME/.buildozer/android/platform
-        # Download cmdline tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
-        mkdir -p android-sdk/cmdline-tools
-        unzip -q cmdtools.zip -d android-sdk/cmdline-tools/latest
-        yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --update
-        yes | android-sdk/cmdline-tools/latest/bin/sdkmanager \
-            "platforms;android-31" "build-tools;31.0.0" "platform-tools"
-        # Download NDK r25b
-        wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+
+        echo "📦 Downloading Android Command Line Tools..."
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+        unzip -q cmdtools.zip -d android-sdk/
+        rm cmdtools.zip
+
+        # 🩵 Pastikan struktur folder benar
+        if [ -d "android-sdk/cmdline-tools/bin" ]; then
+          mkdir -p android-sdk/cmdline-tools/latest
+          mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
+        elif [ -d "android-sdk/cmdline-tools/cmdline-tools/bin" ]; then
+          mkdir -p android-sdk/cmdline-tools/latest
+          mv android-sdk/cmdline-tools/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
+        fi
+
+        echo "✅ SDK tools unpacked successfully."
+
+        # 🧩 Install required packages
+        export PATH=$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$PATH
+        yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
+        yes | sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
+            "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+        echo "🧱 Installing Android NDK r25b..."
+        wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip -q android-ndk-r25b-linux.zip
+        rm -f android-ndk-r25b-linux.zip
 
     - name: Build APK
       env:
@@ -46,6 +59,7 @@ jobs:
       run: |
         export PATH=$ANDROIDSDK/cmdline-tools/latest/bin:$PATH
         cd broiler
+        echo "=== BUILD START ==="
         buildozer android debug
 
     - name: Upload APK artifact
