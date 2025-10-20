@@ -24,7 +24,7 @@ jobs:
           pip install buildozer==1.5.0 Cython==0.29.36
 
       - name: Build APK
-        working-directory: broilerapp/broiler
+        working-directory: broiler
         run: |
           buildozer android debug
 
