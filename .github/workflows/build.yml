@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Install dependencies
@@ -20,21 +20,26 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install buildozer cython virtualenv
 
+      - name: Verify buildozer installation
+        run: |
+          echo "Buildozer path: $(which buildozer)"
+          buildozer --version
+
       - name: Setup Android SDK & NDK manually
         run: |
           mkdir -p ~/.buildozer/android/platform/
           cd ~/.buildozer/android/platform/
 
-          # Download SDK commandline tools (fix sdkmanager error)
+          # Download Android SDK Commandline Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
           mkdir -p android-sdk/cmdline-tools/latest
           unzip -q cmdtools.zip -d android-sdk/cmdline-tools/latest
           rm cmdtools.zip
 
-          # Install platform tools and SDK platforms
+          # Install essential SDK components
           yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-31"
 
-          # Download NDK (25b)
+          # Download NDK 25b
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
           mv android-ndk-r25b android-ndk-r25b/
@@ -43,7 +48,7 @@ jobs:
       - name: Build APK
         working-directory: ./broiler
         run: |
-          buildozer android debug
+          python3 -m buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
