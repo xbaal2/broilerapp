@@ -1,24 +1,34 @@
 [app]
-title = Broiler
-package.name = broiler
-package.domain = com.xbaal
+title = BroilerApp
+package.name = broilerapp
+package.domain = org.iqbalyda
+version = 0.1
+
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
-version = 1.0
+source.include_exts = py,kv,png,jpg,jpeg,json
+source.include_patterns = icons/*
 
-requirements = python3,kivy==2.3.0,android
+requirements = python3,kivy==2.3.1,openssl,requests
 orientation = portrait
-fullscreen = 0
+icon.filename = icons/icon.png
+android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
-android.api = 33
 android.minapi = 26
-android.ndk = 25b
+android.api = 31
 android.archs = arm64-v8a,armeabi-v7a
-android.sdk = 24
-android.ndk_path = ~/.buildozer/android/platform/android-ndk-r25b
-android.sdk_path = ~/.buildozer/android/platform/android-sdk
+fullscreen = 0
+build_type = debug
+android.entrypoint = main.py
 
-android.release_artifact = bin/Broiler-1.0-release.apk
+android.accept_sdk_license = True
+
+# Manual SDK/NDK path
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+
 log_level = 2
-p4a.branch = master
-buildozer.version = 1.5.0
+
+[buildozer]
+warn_on_root = 1
+build_dir = .buildozer
+log_level = 2
