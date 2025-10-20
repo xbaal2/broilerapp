@@ -38,6 +38,11 @@ jobs:
           unzip -q cmdline-tools.zip -d android-sdk
           mkdir -p android-sdk/cmdline-tools/latest
           mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/ || true
+
+          # 🧩 FIX: buat folder tools/bin agar buildozer bisa menemukan sdkmanager
+          mkdir -p android-sdk/tools/bin
+          ln -sf $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+                 $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           
           echo "📦 Downloading Android NDK (r25b)..."
           wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
