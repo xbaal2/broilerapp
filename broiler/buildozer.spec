@@ -20,12 +20,11 @@ fullscreen = 0
 build_type = debug
 android.entrypoint = main.py
 
-# Force accept license
 android.accept_sdk_license = True
 
-# Manual SDK/NDK paths
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
+
 log_level = 2
 
 [buildozer]
