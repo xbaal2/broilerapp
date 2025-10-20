@@ -47,7 +47,8 @@ jobs:
       - name: Build APK
         working-directory: ./broiler
         run: |
-          echo "=== BUILD START ==="
+          echo "=== CLEAN BUILD START ==="
+          rm -rf .buildozer
           buildozer android debug
 
       - name: Upload APK artifact
