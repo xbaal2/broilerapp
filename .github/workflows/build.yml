@@ -20,34 +20,33 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install buildozer cython virtualenv
 
-      - name: Verify buildozer installation
-        run: |
-          echo "Buildozer path: $(which buildozer)"
-          buildozer --version
-
       - name: Setup Android SDK & NDK manually
         run: |
           mkdir -p ~/.buildozer/android/platform/
           cd ~/.buildozer/android/platform/
 
-          # Download Android SDK Commandline Tools
+          echo "📦 Downloading Android Command Line Tools..."
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
-          mkdir -p android-sdk/cmdline-tools/latest
-          unzip -q cmdtools.zip -d android-sdk/cmdline-tools/latest
+          mkdir -p android-sdk/cmdline-tools
+          unzip -q cmdtools.zip -d android-sdk/cmdline-tools
           rm cmdtools.zip
 
-          # Install essential SDK components
-          yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-31"
+          # 🔧 Pindahkan agar struktur sesuai (perubahan penting!)
+          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
 
-          # Download NDK 25b
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip -q android-ndk-r25b-linux.zip
-          rm -f android-ndk-r25b-linux.zip
+          echo "🧩 Installing SDK packages..."
+          yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+          echo "🧱 Installing Android NDK r25b..."
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
+          unzip -q ndk.zip
+          rm ndk.zip
 
       - name: Build APK
         working-directory: ./broiler
         run: |
-          python3 -m buildozer android debug
+          echo "=== BUILD START ==="
+          buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
