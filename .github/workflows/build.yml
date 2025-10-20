@@ -1,55 +1,35 @@
 name: Build Kivy APK
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip openjdk-17-jdk unzip zip git
-          pip install --upgrade pip setuptools wheel
-          pip install buildozer cython virtualenv
-
-      - name: Setup Android SDK & NDK manually
-        run: |
-          mkdir -p ~/.buildozer/android/platform/
-          cd ~/.buildozer/android/platform/
-
-          echo "📦 Downloading Android Command Line Tools..."
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
-          mkdir -p android-sdk/cmdline-tools
-          unzip -q cmdtools.zip -d android-sdk/cmdline-tools
-          rm cmdtools.zip
-
-          # 🔧 Pindahkan agar struktur sesuai (perubahan penting!)
-          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
-
-          echo "🧩 Installing SDK packages..."
-          yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-31" "build-tools;31.0.0"
-
-          echo "🧱 Installing Android NDK r25b..."
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
-          unzip -q ndk.zip
-          rm ndk.zip
+          sudo apt install -y python3-pip zip unzip openjdk-17-jdk
+          pip install buildozer==1.5.0 Cython==0.29.36
 
       - name: Build APK
-        working-directory: ./broiler
+        working-directory: broilerapp/broiler
         run: |
-          echo "=== BUILD START ==="
           buildozer android debug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-APK
-          path: broiler/bin/*.apk
+          name: Broiler-APK
+          path: broilerapp/broiler/bin/*.apk
