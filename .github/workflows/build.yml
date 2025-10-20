@@ -1,4 +1,4 @@
-name: Build Kivy APK
+name: Build BroilerApp (Kivy → APK)
 
 on:
   push:
@@ -10,23 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip openjdk-17-jdk unzip zip git
+          sudo apt install -y python3 python3-pip openjdk-17-jdk unzip zip wget git
           pip install --upgrade pip setuptools wheel
           pip install buildozer cython virtualenv
 
       - name: Setup Android SDK & NDK
         run: |
-          mkdir -p ~/.buildozer/android/platform/
-          cd ~/.buildozer/android/platform/
+          mkdir -p $HOME/.buildozer/android/platform/
+          cd $HOME/.buildozer/android/platform/
 
-          # === Download Android SDK command line tools (fix folder structure) ===
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
           mkdir -p android-sdk/cmdline-tools
           unzip -q cmdtools.zip -d android-sdk/cmdline-tools/
           mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
@@ -35,22 +34,24 @@ jobs:
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
 
-          # === Accept all SDK licenses and install tools ===
+          # symlink agar Buildozer menemukan sdkmanager
+          ln -sf $ANDROID_HOME/cmdline-tools/latest $ANDROID_HOME/tools
+
           yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           yes | sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "build-tools;33.0.2" "platforms;android-31"
 
-          # === Download Android NDK ===
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
-          rm -f android-ndk-r25b-linux.zip
+          rm android-ndk-r25b-linux.zip
 
       - name: Build APK
         working-directory: ./broiler
         run: |
+          echo "=== BUILD START ==="
           buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BroilerApp-APK
+          name: BroilerApp-debug-apk
           path: broiler/bin/*.apk
