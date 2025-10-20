@@ -8,59 +8,45 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev \
-            autoconf automake build-essential cmake git libtool pkg-config zip zlib1g-dev
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip git wget libffi-dev libssl-dev build-essential
 
-      - name: Install Buildozer & dependencies
+      - name: Install Buildozer
         run: |
-          pip install --upgrade pip Cython setuptools virtualenv
-          pip install buildozer==1.5.0
-          pip install kivy==2.3.1
+          pip install --upgrade pip setuptools wheel Cython
+          pip install buildozer
 
-      - name: Prepare Android SDK & NDK
+      - name: Install Android SDK & NDK manually (stable path)
         run: |
-          mkdir -p $HOME/.buildozer/android/platform
-          cd $HOME/.buildozer/android/platform
-          # --- SDK ---
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O sdk-tools.zip
-          unzip -q sdk-tools.zip -d android-sdk
-          rm sdk-tools.zip
+          mkdir -p ~/.buildozer/android/platform
+          cd ~/.buildozer/android/platform
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d android-sdk
+          rm cmdtools.zip
           yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
           yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk \
-            "platforms;android-31" "build-tools;31.0.0" "platform-tools"
-          # --- NDK ---
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
-          unzip -q ndk.zip
-          mv android-ndk-r25b android-ndk
-          rm ndk.zip
-
-      - name: Set environment variables
-        run: |
-          echo "ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "ANDROIDNDK=$HOME/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
-          echo "PATH=$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/bin:$HOME/.buildozer/android/platform/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+            "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653" "cmdline-tools;latest"
 
       - name: Build APK
-        working-directory: ./broiler
+        working-directory: broiler
         run: |
-          buildozer android debug --verbose
+          buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: broilerapp-debug-apk
+          name: BroilerApp-debug.apk
           path: broiler/bin/*.apk
