@@ -25,20 +25,21 @@ jobs:
           mkdir -p ~/.buildozer/android/platform/
           cd ~/.buildozer/android/platform/
 
-          # === Download Android SDK command line tools ===
+          # === Download Android SDK command line tools (fix folder structure) ===
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
-          mkdir -p android-sdk/cmdline-tools/latest
-          unzip -q cmdtools.zip -d android-sdk/cmdline-tools/latest
+          mkdir -p android-sdk/cmdline-tools
+          unzip -q cmdtools.zip -d android-sdk/cmdline-tools/
+          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
           rm cmdtools.zip
 
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
 
-          # === Accept all licenses & install tools ===
-          yes | sdkmanager --licenses >/dev/null || true
+          # === Accept all SDK licenses and install tools ===
+          yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           yes | sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "build-tools;33.0.2" "platforms;android-31"
 
-          # === Download NDK ===
+          # === Download Android NDK ===
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
           rm -f android-ndk-r25b-linux.zip
