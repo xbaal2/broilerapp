@@ -8,7 +8,7 @@ source.dir = .
 source.include_exts = py,kv,png,jpg,jpeg,json
 source.include_patterns = icons/*
 
-requirements = python3,kivy==2.3.1,openssl,requests
+requirements = python3,kivy==2.3.1,openssl,requests,cython,setuptools
 orientation = portrait
 icon.filename = icons/icon.png
 
@@ -29,5 +29,5 @@ log_level = 2
 [buildozer]
 warn_on_root = 1
 build_dir = .buildozer
-build_cache = True
+build_cache = False
 log_level = 2
